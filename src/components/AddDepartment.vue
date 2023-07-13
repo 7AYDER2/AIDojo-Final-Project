@@ -1,6 +1,6 @@
 <template>
     <transition name="fade" mode="out-in">
-          <form @submit.prevent="submitData" class=" w-[36rem] rounded relative mt-[3rem] " enctype="multipart/form-data">
+          <form @submit.prevent="submitData" class="w-[36rem] rounded relative mt-[3rem] " enctype="multipart/form-data">
             <div class="flex justify-between items-center">
                 <h1 class="text-blue-600 font-bold text-[1.7rem] p-[1.5rem]">Add New Department</h1>
             </div>
@@ -21,19 +21,23 @@
                   v-model="houseZoneName"
                   type="text" placeholder="Owner of house" required>
                 <input class="rounded p-[0.5rem] px-1  bg-gray-200 focus:outline-none" 
-                v-model="numberRooms"
+                  v-model="numberRooms"
                  type="text" placeholder="Numbers of room" required>
                 <input class="rounded p-[0.5rem] px-1  bg-gray-200 focus:outline-none" 
-                v-model="deptSize"
+                  v-model="deptSize"
+                  @input="debounceData"
                 type="text" placeholder="Size of dept" required>
                 <input class="rounded p-[0.5rem] px-1  bg-gray-200 focus:outline-none" type="text"
                 v-model="addRESS"
                 placeholder="ADDRESS" required maxlength="15">
             </div>
             <textarea v-model="desc" class="mt-6 p-[1rem] w-[92%] mx-[1.5rem]  bg-gray-200 focus:outline-none h-[100px]" name="" id="" cols="30" rows="10" placeholder="Descripton" required></textarea>
-            <input class="mx-[1.5rem] mt-6 rounded p-[0.5rem] px-1  bg-gray-200 focus:outline-none"
-                v-model="priceHouse"
-                type="text" placeholder="price of house" required>
+                <div class="flex items-center">
+                  <input class="mx-[1.5rem] mt-6 rounded p-[0.5rem] px-1  bg-gray-200 focus:outline-none"
+                   v-model="priceHouse"
+                   type="text" placeholder="price of house" required>
+                  <p v-if="estimatePrice != null" class="text-red-400 mt-[1.3rem] ">estimate price :<br/> <span>{{ estimatePrice }}$</span></p>
+                </div>
             <div class="h-[0.1rem] bg-slate-300 mt-6 mx-[1.5rem] relative">
                 <h3 class="bg-white text-slate-500 absolute top-[-0.7rem] left-[50%] translate-x-[-50%] px-[1rem]">Contact Us</h3>
             </div>
@@ -44,10 +48,11 @@
                 required>
                 <div class="relative ">
                     <p class="absolute  bottom-[2.5rem] text-red-500 text-[0.8rem]">*Optional</p>
-                    <input class="rounded p-[0.5rem] px-1  bg-gray-200 focus:outline-none" type="text"
-                    v-model="emailOptional"
-                    placeholder="Email"
-                    >
+                    <input 
+                      class="rounded p-[0.5rem] px-1  bg-gray-200 focus:outline-none" 
+                      type="text"
+                      v-model="emailOptional"
+                      placeholder="Email"/>
                 </div>
             </div>
             <button type="submit" class="bg-blue-600 p-[0.5rem] text-white text-[1.2rem] px-[2rem] absolute right-[1rem] ">Post</button>
@@ -62,6 +67,7 @@
  import { computed, ref } from 'vue';
  import { IconUpload } from '@tabler/icons-vue';
 import axios from 'axios';
+import {debounce} from "lodash";
 
 
 const onFileChange = ref();
@@ -73,14 +79,8 @@ const priceHouse = ref();
 const addRESS = ref();
 const PhoneNumber =ref();
 const emailOptional =ref();
-
-const isSuccses = ref(false)
-
-//  computed(()=>{
-//  const words = addRESS.value.trim().split('')
-//   const limitedWords = words.slice(0, 15);
-//       return limitedWords.join(' ');
-// })
+const isSuccses = ref(false);
+const estimatePrice = ref()
 
 
 const messageSucssfuly = ()=>{
@@ -98,6 +98,38 @@ const messageSucssfuly = ()=>{
    PhoneNumber.value = "";
    emailOptional.value = "";
 }
+
+
+const normalize = (tensor) => {
+  const numericTensor = tf.cast(tensor, 'float32'); // Cast the tensor to float32 data type
+    const min = tf.min(numericTensor, 0);
+    const max = tf.max(numericTensor, 0);
+    const range = tf.sub(max, min);
+    // tensor - min
+    const tensorMinusMin = tf.sub(tensor, min);
+    const normalizedValue = tf.div(tensorMinusMin, range);
+    return normalizedValue
+}
+
+const checking = async() => {
+      // load the model after extract ass json file
+    let model = await tf.loadLayersModel('../../public/model/model.json');
+
+    // input value to ai 
+    let newValue = tf.tensor2d([[parseFloat(deptSize.value), parseFloat(numberRooms.value)]]);
+
+    // normalize the input
+    let normalizedValue = normalize(newValue);
+
+    let output = model.predict(normalizedValue);
+    output.print();
+
+    const arrayBatch = await output.array()
+    console.log(arrayBatch)
+    estimatePrice.value = arrayBatch[0][0]
+}
+
+const debounceData = debounce(checking,3000)
 
 const submitData =(e)=>{
     e.preventDefault();
