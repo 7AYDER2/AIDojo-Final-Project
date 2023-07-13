@@ -1,6 +1,6 @@
 # HouseCorner
 
-![Group 1000004145 (2)](https://github.com/7AYDER2/AIDojo-Final-Project/assets/104260062/e2ee23bf-0988-448c-85ef-5ac8b9391c04)
+![Group 1000004145](https://github.com/7AYDER2/AIDojo-Final-Project/assets/104260062/dc7d1df9-9916-40a4-98af-e717d585f1e2)
 
 
 This template should help get you started developing with Vue 3 in Vite.
